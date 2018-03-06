@@ -97,7 +97,9 @@ class block_myachievementpoints extends block_base {
 	}
 
 	if (!$USER->id) {
-		$this->content->text .= html_writer::tag( 'p', get_string('notloggedin', 'block_myachievementpoints') );
+		//$this->content->text .= html_writer::tag( 'p', get_string('notloggedin', 'block_myachievementpoints') );
+		// empty content if not logged in -- block will not appear
+		$this->content->text = '';
 		$this->content->footer = '';
 		return $this->content;
 	}
@@ -117,6 +119,8 @@ class block_myachievementpoints extends block_base {
 	if ($cache->get('total_achievement_points')) {
 		debugging('Used cache', DEBUG_DEVELOPER);
 		$data->total_achievement_points = $cache->get('total_achievement_points');
+		$data->total_conduct_points = $cache->get('total_conduct_points');
+		$data->total_behaviour_points = $cache->get('total_behaviour_points');
 	}
 	else {
 		require_once( dirname(__FILE__) . '/classes/local/hub_api_request.php' );
@@ -144,17 +148,28 @@ class block_myachievementpoints extends block_base {
 
 		if ($request->status == 200 && is_array($result) && count($result) > 0) {
 			$data->total_achievement_points = intval($result[0]->total_achievement_points);
+			$data->total_conduct_points = intval($result[0]->total_conduct_points);
+			$data->total_behaviour_points = intval($result[0]->total_behaviour_points);
 
 			$cache->set('total_achievement_points', $data->total_achievement_points);
+			$cache->set('total_conduct_points', $data->total_conduct_points);
+			$cache->set('total_behaviour_points', $data->total_behaviour_points);
 		}
 		else if ($request->status == 200) {
-			$this->content->text .= html_writer::tag( 'p', get_string('noresults', 'block_myachievementpoints'));
+			//$this->content->text .= html_writer::tag( 'p', get_string('noresults', 'block_myachievementpoints'));
+			// empty content if no results -- block will not appear
 			return $this->content;
 		}
 		else {
 			$this->content->text .= html_writer::tag( 'p', sprintf(get_string('requestfailed', 'block_myachievementpoints'), $request->status));
 			return $this->content;
 		}
+	}
+
+	// if data is out of range, we don't want to display it
+	if ($data->total_conduct_points < 0) {
+		$data->total_conduct_points = get_string('negative_conduct_points', 'block_myachievementpoints');	
+		$data->total_behaviour_points = get_string('high_behaviour_points', 'block_myachievementpoints');	
 	}
 
 	// normal rendering if we have data
