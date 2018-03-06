@@ -49,4 +49,7 @@ $string['requestfailed'] = 'Unable to show your Achievement Points at this time 
 $string['noresults'] = 'Unable to show your Achievement Points at this time, as they were not found in the system.';
 $string['exceptionduringrequest'] = 'Unable to show your Achievement Points at this time, as there was an error during the request.';
 $string['notloggedin'] = 'You need to be logged in with a pupil account to see these details.';
-
+$string['latencydisclaimer'] = 'This system is updated once per day.';
+$string['cachedef_achievement_totals'] = 'Stores achievement total data for a user\'s session.';
+$string['total_achievement_points_label'] = 'Total Achievement Points';
+$string['negative_achievement_points'] = '';

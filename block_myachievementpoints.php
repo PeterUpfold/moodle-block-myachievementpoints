@@ -85,13 +85,16 @@ class block_myachievementpoints extends block_base {
 
         if ($this->content !== NULL) {
             return $this->content;
-        }
+        }	
 
-	
-
+	// initialise block content object
         $this->content = new stdClass();
-
 	$this->content->text = '';
+	$this->content->footer = '';
+
+	if (empty($this->instance)) {
+		return $this->content;
+	}
 
 	if (!$USER->id) {
 		$this->content->text .= html_writer::tag( 'p', get_string('notloggedin', 'block_myachievementpoints') );
@@ -99,45 +102,66 @@ class block_myachievementpoints extends block_base {
 		return $this->content;
 	}
 
-	// are we configured correctly? if not, fail early
+	// are the block's global config options configured correctly? if not, fail early
 	if (!$this->is_configured()) {
 		$this->content->text .= html_writer::tag( 'p', get_string('notconfigured', 'block_myachievementpoints') );
 		$this->content->footer = '';
 		return $this->content;
 	}
 
-	require_once( dirname(__FILE__) . '/classes/local/hub_api_request.php' );
+	// data for template
+	$data = new \stdClass();
 
-	try {
-		$request = new \block_myachievementpoints\local\WP_REST_API_Request(
-			$CFG->block_myachievementpoints_api_base,
-			$CFG->block_myachievementpoints_api_namespace,
-			$CFG->block_myachievementpoints_api_route,
-			$CFG->block_myachievementpoints_api_user,
-			$CFG->block_myachievementpoints_api_pass
-		);
-		$request->add_query_argument('orderby', 'date');
-		$request->add_query_argument('order', 'desc');
-		$request->add_query_argument('status', 'private');
-		$request->add_meta_query('username', $USER->username, '=');
-		
-		$result = $request->request();
-	}
-	catch (Exception $e) {
-		$this->content->text .= html_writer::tag( 'p', get_string('exceptionduringrequest', 'block_myachievementpoints') );
-	}
-
-	if ($request->status == 200 && is_array($result) && count($result) > 0) {
-		$this->content->text .= $result[0]->total_achievement_points;
-	}
-	else if ($request->status == 200) {
-		$this->content->text .= html_writer::tag( 'p', get_string('noresults', 'block_myachievementpoints'));
+	// is the data already in the cache?
+	$cache = cache::make('block_myachievementpoints', 'achievement_totals');
+	if ($cache->get('total_achievement_points')) {
+		debugging('Used cache', DEBUG_DEVELOPER);
+		$data->total_achievement_points = $cache->get('total_achievement_points');
 	}
 	else {
-		$this->content->text .= html_writer::tag( 'p', sprintf(get_string('requestfailed', 'block_myachievementpoints'), $request->status));
+		require_once( dirname(__FILE__) . '/classes/local/hub_api_request.php' );
+
+		debugging('Did not use cache', DEBUG_DEVELOPER);
+		try {
+			$request = new \block_myachievementpoints\local\WP_REST_API_Request(
+				$CFG->block_myachievementpoints_api_base,
+				$CFG->block_myachievementpoints_api_namespace,
+				$CFG->block_myachievementpoints_api_route,
+				$CFG->block_myachievementpoints_api_user,
+				$CFG->block_myachievementpoints_api_pass
+			);
+			$request->timeout = 2;
+			$request->add_query_argument('orderby', 'date');
+			$request->add_query_argument('order', 'desc');
+			$request->add_query_argument('status', 'private');
+			$request->add_meta_query('username', $USER->username, '=');
+			
+			$result = $request->request();
+		}
+		catch (Exception $e) {
+			$this->content->text .= html_writer::tag( 'p', get_string('exceptionduringrequest', 'block_myachievementpoints') );
+		}
+
+		if ($request->status == 200 && is_array($result) && count($result) > 0) {
+			$data->total_achievement_points = intval($result[0]->total_achievement_points);
+
+			$cache->set('total_achievement_points', $data->total_achievement_points);
+		}
+		else if ($request->status == 200) {
+			$this->content->text .= html_writer::tag( 'p', get_string('noresults', 'block_myachievementpoints'));
+			return $this->content;
+		}
+		else {
+			$this->content->text .= html_writer::tag( 'p', sprintf(get_string('requestfailed', 'block_myachievementpoints'), $request->status));
+			return $this->content;
+		}
 	}
 
-        $this->content->footer = '';
+	// normal rendering if we have data
+	$renderer = $this->page->get_renderer('block_myachievementpoints');
+	$block = new \block_myachievementpoints\output\block($data);
+
+	$this->content->text .= $renderer->render($block);
 
         return $this->content;
     }
