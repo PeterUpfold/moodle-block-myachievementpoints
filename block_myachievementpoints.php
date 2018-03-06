@@ -57,14 +57,16 @@ class block_myachievementpoints extends block_base {
 	);
 
 	foreach($searchfor as $configkey) {
-		if (!property_exists($CFG, 'block_myachievementpoints_' . $configkey) {
+		if (!property_exists($CFG, 'block_myachievementpoints_' . $configkey)) {
 			debugging(sprintf('%s (%s)', get_string('nokey', 'block_myachievementpoints'), $configkey), DEBUG_DEVELOPER);
 			return false;
 		}
-		if (!isset($CFG->{block_myachievementpoints_$configkey})) {
+		$completekey = 'block_myachievementpoints_' . $configkey;
+
+		if (!isset($CFG->$completekey)) {
 			return false;
 		}
-		if (empty($CFG->{block_myachievementpoints_$configkey})) {
+		if (empty($CFG->$completekey)) {
 			return false;
 		}
 	}
