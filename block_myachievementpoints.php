@@ -41,6 +41,13 @@ class block_myachievementpoints extends block_base {
     }
 
     /**
+     * Allow the use of the global settings for this block.
+     */
+    public function has_config() {
+	return true;
+    }
+
+    /**
      * Determine whether or not the block is correctly configured for API access.
      *
      * @return bool
@@ -51,7 +58,7 @@ class block_myachievementpoints extends block_base {
 	$searchfor = array(
 		'api_base',
 		'api_namespace',
-		'api_root',
+		'api_route',
 		'api_user',
 		'api_pass'
 	);
@@ -84,7 +91,13 @@ class block_myachievementpoints extends block_base {
 
         $this->content = new stdClass();
 
-	$this->context->text = '';
+	$this->content->text = '';
+
+	if (!$USER->id) {
+		$this->content->text .= html_writer::tag( 'p', get_string('notloggedin', 'block_myachievementpoints') );
+		$this->content->footer = '';
+		return $this->content;
+	}
 
 	// are we configured correctly? if not, fail early
 	if (!$this->is_configured()) {
@@ -94,22 +107,31 @@ class block_myachievementpoints extends block_base {
 	}
 
 	require_once( dirname(__FILE__) . '/classes/local/hub_api_request.php' );
-	$request = new \block_myachievementpoints\local\WP_REST_API_Request(
-		$CFG->block_myachievementpoints_api_base,
-		$CFG->block_myachievementpoints_api_namespace,
-		$CFG->block_myachievementpoints_api_route,
-		$CFG->block_myachievementpoints_api_user,
-		$CFG->block_myachievementpoints_api_pass
-	);
-	$request->add_query_argument('orderby', 'date');
-	$request->add_query_argument('order', 'desc');
-	$request->add_query_argument('status', 'private');
-	$request->add_meta_query('username', $USER->username);
-	
-	$result = $request->request();
+
+	try {
+		$request = new \block_myachievementpoints\local\WP_REST_API_Request(
+			$CFG->block_myachievementpoints_api_base,
+			$CFG->block_myachievementpoints_api_namespace,
+			$CFG->block_myachievementpoints_api_route,
+			$CFG->block_myachievementpoints_api_user,
+			$CFG->block_myachievementpoints_api_pass
+		);
+		$request->add_query_argument('orderby', 'date');
+		$request->add_query_argument('order', 'desc');
+		$request->add_query_argument('status', 'private');
+		$request->add_meta_query('username', $USER->username, '=');
+		
+		$result = $request->request();
+	}
+	catch (Exception $e) {
+		$this->content->text .= html_writer::tag( 'p', get_string('exceptionduringrequest', 'block_myachievementpoints') );
+	}
 
 	if ($request->status == 200 && is_array($result) && count($result) > 0) {
 		$this->content->text .= $result[0]->total_achievement_points;
+	}
+	else if ($request->status == 200) {
+		$this->content->text .= html_writer::tag( 'p', get_string('noresults', 'block_myachievementpoints'));
 	}
 	else {
 		$this->content->text .= html_writer::tag( 'p', sprintf(get_string('requestfailed', 'block_myachievementpoints'), $request->status));
