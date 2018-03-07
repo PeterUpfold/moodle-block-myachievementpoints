@@ -55,5 +55,5 @@ $string['total_achievement_points_label'] = 'Achievement Points';
 $string['total_conduct_points_label'] = 'Overall Achievement Points Total';
 $string['negative_conduct_points'] = '--';
 $string['total_behaviour_points_label'] = 'Behaviour Points';
-$string['high_behaviour_points'] = '--';
+$string['high_behaviour_points'] = '!';
 $string['total_conduct_points_consists_of'] = 'calculated from&hellip;';
