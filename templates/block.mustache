@@ -26,7 +26,7 @@
 
 	<aside class="statistic prominent">
 		<p>{{# str }}total_achievement_points_label, block_myachievementpoints{{/ str }}</p>
-		<h4 class="counter positive">{{ total_achievement_points }}</h4>
+		<h4 class="counter positive" id="total_achievement_points" data-value="{{ total_achievement_points }}">{{ total_achievement_points }}</h4>
 	</aside>
 
 	<aside class="explanatory">
@@ -35,7 +35,7 @@
 
 	<aside class="statistic prominent">
 		<p>{{# str }}total_behaviour_points_label, block_myachievementpoints{{/ str }}</p>
-		<h4 class="counter negative">{{ total_behaviour_points }}</h4>
+		<h4 class="counter negative" id="total_behaviour_points" data-value="{{ total_behaviour_points }}">{{ total_behaviour_points }}</h4>
 	</aside>
 
 </div>
